@@ -12,4 +12,4 @@ target_link_libraries(
 
 include(GoogleTest)
 
-gtest_discover_tests(inferlite_tests)cat tests/CMakeLists.txt
+gtest_discover_tests(inferlite_tests)
