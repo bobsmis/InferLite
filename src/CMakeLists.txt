@@ -3,7 +3,11 @@ add_library(
     STATIC
     core/version.cpp
 )
-
+target_link_libraries(
+    inferlite_core
+    PRIVATE
+        inferlite_project_options
+)
 target_include_directories(
     inferlite_core
     PUBLIC

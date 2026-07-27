@@ -2,8 +2,6 @@
 
 namespace inferlite {
 
-const char* project_name() noexcept {
-    return "InferLite";
-}
+const char* project_name() noexcept { return "InferLite"; }
 
-}
+} // namespace inferlite

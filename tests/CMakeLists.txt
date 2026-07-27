@@ -7,6 +7,7 @@ target_link_libraries(
     inferlite_tests
     PRIVATE
         inferlite_core
+        inferlite_project_options
         GTest::gtest_main
 )
 
