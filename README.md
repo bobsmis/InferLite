@@ -17,10 +17,12 @@ InferLite 是一个用于学习 C++ 服务端工程和模型推理系统的轻�
 
 ## Debug 构建
 
-```bash
+```
+bash
 cmake -S . -B build/debug -G Ninja -DCMAKE_BUILD_TYPE=Debug
 cmake --build build/debug
 ```
+
 
 ## 项目Target
 
