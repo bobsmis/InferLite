@@ -7,6 +7,7 @@ target_link_libraries(
     inferlite_core
     PRIVATE
         inferlite_project_options
+         inferlite_sanitizers
 )
 target_include_directories(
     inferlite_core

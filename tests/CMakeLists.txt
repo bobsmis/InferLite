@@ -8,6 +8,7 @@ target_link_libraries(
     PRIVATE
         inferlite_core
         inferlite_project_options
+         inferlite_sanitizers
         GTest::gtest_main
 )
 

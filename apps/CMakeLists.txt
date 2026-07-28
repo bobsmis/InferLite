@@ -9,4 +9,5 @@ target_link_libraries(#为可执行文件链接静态库
     PRIVATE
         inferlite_core
         inferlite_project_options
+         inferlite_sanitizers
 )
