@@ -9,7 +9,7 @@ namespace inferlite {
 using Shape = std::vector<std::int64_t>;
 using TensorData = std::vector<float>;
 
-class [[nodiscard]] Tensor final {
+class Tensor final {
   public:
     Tensor(Shape shape, TensorData data);
 
