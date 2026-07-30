@@ -2,6 +2,7 @@ add_executable(
     inferlite_tests
     unit/status_test.cpp
     unit/version_test.cpp
+    unit/tensor_test.cpp
 )
 
 target_link_libraries(

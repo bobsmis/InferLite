@@ -3,6 +3,7 @@ add_library(
     STATIC
     core/version.cpp
     core/status.cpp
+    core/tensor.cpp
 )
 target_link_libraries(
     inferlite_core
