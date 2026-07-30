@@ -1,5 +1,6 @@
 add_executable(
     inferlite_tests
+    unit/status_test.cpp
     unit/version_test.cpp
 )
 

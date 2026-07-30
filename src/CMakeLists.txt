@@ -2,6 +2,7 @@ add_library(
     inferlite_core
     STATIC
     core/version.cpp
+    core/status.cpp
 )
 target_link_libraries(
     inferlite_core
