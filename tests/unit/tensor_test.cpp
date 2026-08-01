@@ -2,7 +2,7 @@
 
 #include <cstdint>
 #include <limits>
-#include <stdexcept>
+#include <string>
 #include <utility>
 
 #include "inferlite/core/tensor.h"
@@ -10,102 +10,128 @@
 namespace inferlite {
 namespace {
 
-TEST(TensorTest, ConstructorInitializesShapeAndData) {
+TEST(TensorTest, CreatesOrdinaryTensorFromLvalues) {
     const Shape shape = {2, 3};
-    const TensorData data = {1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f};
+    const TensorData data = {1.0F, 2.0F, 3.0F, 4.0F, 5.0F, 6.0F};
 
-    const Tensor tensor(shape, data);
+    StatusOr<Tensor> result = Tensor::Create(shape, data);
 
+    ASSERT_TRUE(result.ok());
+    const Tensor& tensor = result.value();
     EXPECT_EQ(tensor.shape(), shape);
     EXPECT_EQ(tensor.data(), data);
-}
-
-TEST(TensorTest, RankReturnsCorrectValue) {
-    const Shape shape = {2, 3, 4};
-    const TensorData data(24, 0.0f);
-
-    const Tensor tensor(shape, data);
-
-    EXPECT_EQ(tensor.rank(), 3U);
-}
-
-TEST(TensorTest, SizeReturnsCorrectValue) {
-    const Shape shape = {2, 3};
-    const TensorData data(6, 0.0f);
-
-    const Tensor tensor(shape, data);
-
+    EXPECT_EQ(tensor.rank(), 2U);
     EXPECT_EQ(tensor.size(), 6U);
 }
 
-TEST(TensorTest, CopyConstructionCreatesIndependentStorage) {
-    const Shape shape = {2, 3};
-    const TensorData data = {1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f};
+TEST(TensorTest, EmptyShapeCreatesScalar) {
+    StatusOr<Tensor> result = Tensor::Create({}, {42.0F});
 
-    const Tensor original_tensor(shape, data);
-    const Tensor copied_tensor = original_tensor;
-
-    EXPECT_EQ(copied_tensor.shape(), original_tensor.shape());
-    EXPECT_EQ(copied_tensor.data(), original_tensor.data());
-    EXPECT_NE(copied_tensor.data().data(), original_tensor.data().data());
+    ASSERT_TRUE(result.ok());
+    EXPECT_TRUE(result.value().shape().empty());
+    EXPECT_EQ(result.value().rank(), 0U);
+    EXPECT_EQ(result.value().size(), 1U);
+    EXPECT_EQ(result.value().data(), TensorData({42.0F}));
 }
 
-TEST(TensorTest, MoveConstructionPreservesValue) {
-    const Shape shape = {2, 3};
-    const TensorData data = {1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f};
+TEST(TensorTest, EmptyShapeRequiresOneDataElement) {
+    const StatusOr<Tensor> result = Tensor::Create({}, {});
 
-    Tensor original_tensor(shape, data);
-    const Tensor moved_tensor = std::move(original_tensor);
-
-    EXPECT_EQ(moved_tensor.shape(), shape);
-    EXPECT_EQ(moved_tensor.data(), data);
-    EXPECT_EQ(moved_tensor.rank(), 2U);
-    EXPECT_EQ(moved_tensor.size(), 6U);
+    ASSERT_FALSE(result.ok());
+    EXPECT_EQ(result.status().code(), ErrorCode::kInvalidArgument);
+    EXPECT_NE(result.status().message().find("expected=1"), std::string::npos);
+    EXPECT_NE(result.status().message().find("actual=0"), std::string::npos);
 }
 
-TEST(TensorTest, EmptyShapeThrowsInvalidArgument) {
-    const Shape shape;
-    const TensorData data;
+TEST(TensorTest, ZeroDimensionCreatesEmptyTensor) {
+    StatusOr<Tensor> result = Tensor::Create({2, 0, 3}, {});
 
-    EXPECT_THROW((Tensor(shape, data)), std::invalid_argument);
+    ASSERT_TRUE(result.ok());
+    EXPECT_EQ(result.value().shape(), Shape({2, 0, 3}));
+    EXPECT_EQ(result.value().rank(), 3U);
+    EXPECT_EQ(result.value().size(), 0U);
+    EXPECT_TRUE(result.value().data().empty());
 }
 
-TEST(TensorTest, ZeroDimensionThrowsInvalidArgument) {
-    const Shape shape = {2, 0, 3};
-    const TensorData data;
+TEST(TensorTest, ZeroElementShapeRejectsNonemptyData) {
+    const StatusOr<Tensor> result = Tensor::Create({2, 0, 3}, {1.0F});
 
-    EXPECT_THROW((Tensor(shape, data)), std::invalid_argument);
+    ASSERT_FALSE(result.ok());
+    EXPECT_NE(result.status().message().find("expected=0"), std::string::npos);
+    EXPECT_NE(result.status().message().find("actual=1"), std::string::npos);
 }
 
-TEST(TensorTest, NegativeDimensionThrowsInvalidArgument) {
-    const Shape shape = {2, -1, 3};
-    const TensorData data;
+TEST(TensorTest, NegativeDimensionReportsIndexAndValue) {
+    const StatusOr<Tensor> result = Tensor::Create({2, -1, 3}, {});
 
-    EXPECT_THROW((Tensor(shape, data)), std::invalid_argument);
+    ASSERT_FALSE(result.ok());
+    EXPECT_EQ(result.status().code(), ErrorCode::kInvalidArgument);
+    EXPECT_NE(result.status().message().find("index=1"), std::string::npos);
+    EXPECT_NE(result.status().message().find("value=-1"), std::string::npos);
 }
 
-TEST(TensorTest, TooFewDataElementsThrowsInvalidArgument) {
-    const Shape shape = {2, 3};
-    const TensorData data(5, 0.0f);
+TEST(TensorTest, NegativeDimensionIsReportedEvenAfterZeroDimension) {
+    const StatusOr<Tensor> result = Tensor::Create({0, -1}, {});
 
-    EXPECT_THROW((Tensor(shape, data)), std::invalid_argument);
+    ASSERT_FALSE(result.ok());
+    EXPECT_NE(result.status().message().find("index=1"), std::string::npos);
+    EXPECT_NE(result.status().message().find("value=-1"), std::string::npos);
 }
 
-TEST(TensorTest, TooManyDataElementsThrowsInvalidArgument) {
-    const Shape shape = {2, 3};
-    const TensorData data(7, 0.0f);
+TEST(TensorTest, TooFewDataElementsReportsExpectedAndActualSizes) {
+    const StatusOr<Tensor> result = Tensor::Create({2, 3}, TensorData(5, 0.0F));
 
-    EXPECT_THROW((Tensor(shape, data)), std::invalid_argument);
+    ASSERT_FALSE(result.ok());
+    EXPECT_NE(result.status().message().find("expected=6"), std::string::npos);
+    EXPECT_NE(result.status().message().find("actual=5"), std::string::npos);
 }
 
-TEST(TensorTest, ShapeProductOverflowThrowsOverflowError) {
+TEST(TensorTest, TooManyDataElementsReportsExpectedAndActualSizes) {
+    const StatusOr<Tensor> result = Tensor::Create({2, 3}, TensorData(7, 0.0F));
+
+    ASSERT_FALSE(result.ok());
+    EXPECT_NE(result.status().message().find("expected=6"), std::string::npos);
+    EXPECT_NE(result.status().message().find("actual=7"), std::string::npos);
+}
+
+TEST(TensorTest, ShapeProductOverflowReturnsInvalidArgument) {
     const Shape shape = {
         std::numeric_limits<std::int64_t>::max(),
         3,
     };
-    const TensorData data;
 
-    EXPECT_THROW((Tensor(shape, data)), std::overflow_error);
+    const StatusOr<Tensor> result = Tensor::Create(shape, {});
+
+    ASSERT_FALSE(result.ok());
+    EXPECT_EQ(result.status().code(), ErrorCode::kInvalidArgument);
+    EXPECT_NE(result.status().message().find("overflow"), std::string::npos);
+    EXPECT_NE(result.status().message().find("index=1"), std::string::npos);
+    EXPECT_NE(result.status().message().find("value=3"), std::string::npos);
+    EXPECT_NE(result.status().message().find("partial_product="), std::string::npos);
+}
+
+TEST(TensorTest, CopyConstructionCreatesIndependentStorage) {
+    StatusOr<Tensor> result = Tensor::Create({2, 3}, {1.0F, 2.0F, 3.0F, 4.0F, 5.0F, 6.0F});
+    ASSERT_TRUE(result.ok());
+
+    const Tensor copied_tensor = result.value();
+
+    EXPECT_EQ(copied_tensor.shape(), result.value().shape());
+    EXPECT_EQ(copied_tensor.data(), result.value().data());
+    EXPECT_NE(copied_tensor.data().data(), result.value().data().data());
+}
+
+TEST(TensorTest, MovesTensorOutOfStatusOr) {
+    const Shape expected_shape = {2, 2};
+    const TensorData expected_data = {1.0F, 2.0F, 3.0F, 4.0F};
+    StatusOr<Tensor> result = Tensor::Create(expected_shape, expected_data);
+    ASSERT_TRUE(result.ok());
+
+    const Tensor moved_tensor = std::move(result).value();
+
+    EXPECT_EQ(moved_tensor.shape(), expected_shape);
+    EXPECT_EQ(moved_tensor.data(), expected_data);
+    EXPECT_EQ(moved_tensor.size(), 4U);
 }
 
 } // namespace

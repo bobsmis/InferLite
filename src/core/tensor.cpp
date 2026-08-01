@@ -1,43 +1,83 @@
 #include "inferlite/core/tensor.h"
 
+#include <cstddef>
+#include <cstdint>
 #include <limits>
-#include <stdexcept>
+#include <sstream>
 #include <utility>
 
 namespace inferlite {
+namespace {
 
-Tensor::Tensor(Shape shape, TensorData data) : shape_(std::move(shape)), data_(std::move(data)) {
-    if (shape_.empty()) {
-        throw std::invalid_argument("Tensor shape must not be empty.");
+StatusOr<std::size_t> ComputeElementCount(const Shape& shape) {
+    const auto max_size = static_cast<std::uintmax_t>(std::numeric_limits<std::size_t>::max());
+    bool has_zero_dimension = false;
+
+    for (std::size_t index = 0; index < shape.size(); ++index) {
+        const std::int64_t dimension = shape[index];
+
+        if (dimension < 0) {
+            std::ostringstream message;
+            message << "Tensor dimension is negative: index=" << index << ", value=" << dimension;
+            return StatusOr<std::size_t>(Status::InvalidArgument(message.str()));
+        }
+
+        if (dimension == 0) {
+            has_zero_dimension = true;
+            continue;
+        }
+
+        const auto unsigned_dimension = static_cast<std::uintmax_t>(dimension);
+        if (unsigned_dimension > max_size) {
+            std::ostringstream message;
+            message << "Tensor dimension exceeds size_t range: index=" << index
+                    << ", value=" << dimension;
+            return StatusOr<std::size_t>(Status::InvalidArgument(message.str()));
+        }
+    }
+
+    if (has_zero_dimension) {
+        return StatusOr<std::size_t>(std::size_t{0});
     }
 
     std::size_t element_count = 1;
     const std::size_t max_element_count = std::numeric_limits<std::size_t>::max();
 
-    for (const std::int64_t dimension : shape_) {
-        if (dimension <= 0) {
-            throw std::invalid_argument("Tensor dimensions must be positive.");
+    for (std::size_t index = 0; index < shape.size(); ++index) {
+        const auto dimension = static_cast<std::size_t>(shape[index]);
+
+        if (element_count > max_element_count / dimension) {
+            std::ostringstream message;
+            message << "Tensor element count overflow: index=" << index
+                    << ", value=" << shape[index] << ", partial_product=" << element_count;
+            return StatusOr<std::size_t>(Status::InvalidArgument(message.str()));
         }
 
-        const auto unsigned_dimension = static_cast<std::uint64_t>(dimension);
-
-        if (unsigned_dimension > max_element_count) {
-            throw std::overflow_error("Tensor dimension exceeds the size_t range.");
-        }
-
-        const auto dimension_size = static_cast<std::size_t>(unsigned_dimension);
-
-        if (element_count > max_element_count / dimension_size) {
-            throw std::overflow_error("Tensor element count overflow.");
-        }
-
-        element_count *= dimension_size;
+        element_count *= dimension;
     }
 
-    if (data_.size() != element_count) {
-        throw std::invalid_argument(
-            "Tensor data size does not match the product of shape dimensions.");
+    return StatusOr<std::size_t>(element_count);
+}
+
+} // namespace
+
+Tensor::Tensor(Shape shape, TensorData data) : shape_(std::move(shape)), data_(std::move(data)) {}
+
+StatusOr<Tensor> Tensor::Create(Shape shape, TensorData data) {
+    StatusOr<std::size_t> element_count = ComputeElementCount(shape);
+    if (!element_count.ok()) {
+        return StatusOr<Tensor>(element_count.status());
     }
+
+    const std::size_t expected_size = element_count.value();
+    if (data.size() != expected_size) {
+        std::ostringstream message;
+        message << "Tensor data size mismatch: expected=" << expected_size
+                << ", actual=" << data.size();
+        return StatusOr<Tensor>(Status::InvalidArgument(message.str()));
+    }
+
+    return StatusOr<Tensor>(Tensor(std::move(shape), std::move(data)));
 }
 
 std::size_t Tensor::rank() const noexcept { return shape_.size(); }
