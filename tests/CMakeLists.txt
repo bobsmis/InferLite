@@ -1,5 +1,6 @@
 add_executable(
     inferlite_tests
+    unit/inference_io_test.cpp
     unit/status_test.cpp
     unit/status_or_test.cpp
     unit/tensor_test.cpp
