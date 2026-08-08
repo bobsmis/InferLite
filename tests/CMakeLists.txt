@@ -5,6 +5,7 @@ add_executable(
     unit/status_or_test.cpp
     unit/tensor_test.cpp
     unit/version_test.cpp
+    unit/fake_backend_test.cpp
 )
 
 target_link_libraries(

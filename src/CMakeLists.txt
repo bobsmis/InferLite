@@ -5,6 +5,7 @@ add_library(
     core/status.cpp
     core/tensor.cpp
     core/version.cpp
+    backend/fake_backend.cpp
 )
 
 target_link_libraries(
