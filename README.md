@@ -14,17 +14,19 @@ InferLite 是一个使用 C++17 构建的轻量级单机 CPU 模型推理服务�
 - `NamedTensor`；
 - `InferenceRequest`与`InferenceResult`；
 - 输入输出名称校验、顺序保持和只读查找；
+- `IBackend`统一同步推理接口；
+- 支持确定性回显和失败注入的`FakeBackend`；
 - Debug、Release、ASan 和 UBSan 构建入口；
 - GoogleTest 与 CTest 自动化测试。
 
 当前自动化证据：
 
-- Debug 全量测试：43/43；
-- ASan/UBSan 全量测试：43/43；
-- CORE-03 Release 目标测试：17/17；
-- CORE-03 `clang-format --dry-run --Werror`通过。
+- Debug 全量测试：48/48；
+- Release 全量测试：48/48；
+- ASan/UBSan 全量测试：48/48；
+- CORE-04 `clang-format --dry-run --Werror`通过。
 
-下一功能单元是 `IBackend`与`FakeBackend`，随后由 CLI 串联 Request → Backend → Result，形成 `v0.0.1`。
+下一功能单元由 CLI 串联 Request → Backend → Result，形成 `v0.0.1`。
 
 ## 当前调用链
 
@@ -35,11 +37,11 @@ NamedTensor
     ↓
 InferenceRequest
     ↓
-IBackend / FakeBackend（下一单元）
+IBackend / FakeBackend
     ↓
 InferenceResult
     ↓
-CLI（v0.0.1）
+CLI（下一单元，形成v0.0.1）
 ```
 
 ## 核心所有权约定
@@ -48,6 +50,8 @@ CLI（v0.0.1）
 - `NamedTensor`拥有名称和 Tensor；
 - `InferenceRequest`拥有模型名及有序输入集合；
 - `InferenceResult`拥有有序输出集合；
+- 调用者通过`unique_ptr<IBackend>`拥有具体Backend；
+- Backend只在`Infer`调用期间借用Request，并返回拥有式Result；
 - `FindInput`和`FindOutput`返回非拥有的 `const Tensor*`，其生命周期受 Request 或 Result 约束；
 - 可预期的输入错误通过 `StatusOr<T>`传播。
 
@@ -143,7 +147,8 @@ v1.0    CI、文档、Benchmark和发布收口
 ## 当前限制
 
 - 仅支持拥有式连续float32 Tensor；
-- Backend和CLI同步推理闭环尚在开发；
+- CLI同步推理闭环尚在开发；
+- FakeBackend只用于验证调用链和错误传播，不执行真实模型计算；
 - HTTP、ONNX Runtime、异步队列和动态Batch尚未进入；
 - 当前没有性能数据；
 - 项目定位为学习和实验性实现，不使用未经验证的生产级表述。
