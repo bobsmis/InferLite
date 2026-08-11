@@ -20,3 +20,11 @@ target_link_libraries(
 include(GoogleTest)
 
 gtest_discover_tests(inferlite_tests)
+
+add_test(
+    NAME InferLiteCliTest
+    COMMAND
+        ${CMAKE_COMMAND}
+        -DDEMO_PATH=$<TARGET_FILE:inferlite_demo>
+        -P ${CMAKE_CURRENT_SOURCE_DIR}/integration/cli_test.cmake
+)

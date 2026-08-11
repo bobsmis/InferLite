@@ -4,7 +4,7 @@ InferLite 是一个使用 C++17 构建的轻量级单机 CPU 模型推理服务�
 
 ## 当前状态
 
-当前正在形成第一个同步推理闭环 `v0.0.1`。
+第一个同步推理闭环 `v0.0.1` 的代码与自动化门禁已经完成，当前等待学习验收与版本提交。
 
 已完成：
 
@@ -16,17 +16,19 @@ InferLite 是一个使用 C++17 构建的轻量级单机 CPU 模型推理服务�
 - 输入输出名称校验、顺序保持和只读查找；
 - `IBackend`统一同步推理接口；
 - 支持确定性回显和失败注入的`FakeBackend`；
+- 串联Tensor、Request、Backend和Result的命令行程序；
+- 覆盖成功、Backend失败和参数错误的CLI黑盒测试；
 - Debug、Release、ASan 和 UBSan 构建入口；
 - GoogleTest 与 CTest 自动化测试。
 
 当前自动化证据：
 
-- Debug 全量测试：48/48；
-- Release 全量测试：48/48；
-- ASan/UBSan 全量测试：48/48；
-- CORE-04 `clang-format --dry-run --Werror`通过。
+- Debug 全量测试：49/49；
+- Release 全量测试：49/49；
+- ASan/UBSan 全量测试：49/49；
+- APP-01 `clang-format --dry-run --Werror`通过。
 
-下一功能单元由 CLI 串联 Request → Backend → Result，形成 `v0.0.1`。
+CLI闭环验收后进入HTTP + FakeBackend功能链。
 
 ## 当前调用链
 
@@ -41,7 +43,7 @@ IBackend / FakeBackend
     ↓
 InferenceResult
     ↓
-CLI（下一单元，形成v0.0.1）
+CLI输出、错误流和退出码
 ```
 
 ## 核心所有权约定
@@ -105,7 +107,20 @@ ctest --preset sanitize
 当前Demo输出：
 
 ```text
-InferLite
+model=demo_model
+output name=x shape=[2] data=[1,2]
+```
+
+验证Backend失败路径：
+
+```bash
+./build/debug/apps/inferlite_demo --fail
+```
+
+标准错误输出：
+
+```text
+inference failed: fake backend forced failure
 ```
 
 ## 目录结构
@@ -121,7 +136,9 @@ InferLite/
 ├── src/
 │   ├── backend/
 │   └── core/
-└── tests/unit/
+└── tests/
+    ├── integration/
+    └── unit/
 ```
 
 ## 版本路线
@@ -147,7 +164,7 @@ v1.0    CI、文档、Benchmark和发布收口
 ## 当前限制
 
 - 仅支持拥有式连续float32 Tensor；
-- CLI同步推理闭环尚在开发；
+- CLI当前使用固定的演示输入；
 - FakeBackend只用于验证调用链和错误传播，不执行真实模型计算；
 - HTTP、ONNX Runtime、异步队列和动态Batch尚未进入；
 - 当前没有性能数据；
