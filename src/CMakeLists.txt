@@ -20,3 +20,25 @@ target_include_directories(
     PUBLIC
         ${PROJECT_SOURCE_DIR}/include
 )
+
+add_library(
+    inferlite_http
+    STATIC
+    http/http_server.cpp
+)
+
+target_include_directories(
+    inferlite_http
+    PUBLIC
+        ${PROJECT_SOURCE_DIR}/include
+)
+
+target_link_libraries(
+    inferlite_http
+    PUBLIC
+        inferlite_core
+    PRIVATE
+        httplib::httplib
+        inferlite_project_options
+        inferlite_sanitizers
+)

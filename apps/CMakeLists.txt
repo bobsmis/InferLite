@@ -10,3 +10,16 @@ target_link_libraries(
         inferlite_project_options
         inferlite_sanitizers
 )
+
+add_executable(
+    inferlite_server
+    server_main.cpp
+)
+
+target_link_libraries(
+    inferlite_server
+    PRIVATE
+        inferlite_http
+        inferlite_project_options
+        inferlite_sanitizers
+)

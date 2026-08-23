@@ -6,18 +6,21 @@ add_executable(
     unit/tensor_test.cpp
     unit/version_test.cpp
     unit/fake_backend_test.cpp
+    integration/http_server_test.cpp
 )
 
 target_link_libraries(
     inferlite_tests
     PRIVATE
-        GTest::gtest_main
+  GTest::gtest_main
         inferlite_core
+        inferlite_http
+        httplib::httplib
         inferlite_project_options
         inferlite_sanitizers
 )
-
 include(GoogleTest)
+
 
 gtest_discover_tests(inferlite_tests)
 

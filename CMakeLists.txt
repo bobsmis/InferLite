@@ -14,15 +14,17 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 include(cmake/Sanitizers.cmake)
 include(cmake/ProjectOptions.cmake)
 
+include(CTest)
+include(cmake/Dependencies.cmake)
+
 add_subdirectory(src)
 add_subdirectory(apps)
 
-include(CTest)
 
 #这一步的含义：启用CTest测试支持；
 #创建BUILD_TESTING选项，默认通常为ON。
 
+
 if(BUILD_TESTING)
-    include(cmake/Dependencies.cmake)
     add_subdirectory(tests)
 endif()
