@@ -22,14 +22,13 @@ std::unique_ptr<HttpServer> CreateTestServer(std::uint16_t port = 0) {
 
     return std::move(result).value();
 }
-TEST(HttpServerTest, NewlyCreatedServerIsStopped)
-{
+TEST(HttpServerTest, NewlyCreatedServerIsStopped) {
     auto server = CreateTestServer();
     ASSERT_NE(server, nullptr);
     EXPECT_FALSE(server->running());
     EXPECT_FALSE(server->bound_port().has_value());
 }
-    TEST(HttpServerTest, HealthRouteReturnsOk) {
+TEST(HttpServerTest, HealthRouteReturnsOk) {
     auto server = CreateTestServer();
     ASSERT_NE(server, nullptr);
 
@@ -46,9 +45,7 @@ TEST(HttpServerTest, NewlyCreatedServerIsStopped)
     ASSERT_TRUE(response);
     EXPECT_EQ(response->status, 200);
     EXPECT_EQ(response->body, "ok");
-    EXPECT_EQ(
-        response->get_header_value("Content-Type"),
-        "text/plain; charset=utf-8");
+    EXPECT_EQ(response->get_header_value("Content-Type"), "text/plain; charset=utf-8");
 }
 
 TEST(HttpServerTest, UnknownRouteReturnsNotFound) {
@@ -170,5 +167,5 @@ TEST(HttpServerTest, EmptyHostIsRejected) {
     ASSERT_FALSE(result.ok());
     EXPECT_EQ(result.status().code(), ErrorCode::kInvalidArgument);
 }
-}
-}
+} // namespace
+} // namespace inferlite

@@ -11,9 +11,7 @@ namespace {
 
 volatile std::sig_atomic_t stop_requested = 0;
 
-void HandleSignal(int) {
-    stop_requested = 1;
-}
+void HandleSignal(int) { stop_requested = 1; }
 
 } // namespace
 
@@ -22,8 +20,7 @@ int main() {
 
     auto server_result = inferlite::HttpServer::Create(options);
     if (!server_result.ok()) {
-        std::cerr << "Failed to create HTTP server: "
-                  << server_result.status().message() << '\n';
+        std::cerr << "Failed to create HTTP server: " << server_result.status().message() << '\n';
         return 1;
     }
 
@@ -31,8 +28,7 @@ int main() {
 
     const inferlite::Status start_status = server->Start();
     if (!start_status.ok()) {
-        std::cerr << "Failed to start HTTP server: "
-                  << start_status.message() << '\n';
+        std::cerr << "Failed to start HTTP server: " << start_status.message() << '\n';
         return 1;
     }
 
@@ -46,8 +42,7 @@ int main() {
     std::signal(SIGINT, HandleSignal);
     std::signal(SIGTERM, HandleSignal);
 
-    std::cout << "HTTP server is running on http://"
-              << options.host << ':' << *port << '\n';
+    std::cout << "HTTP server is running on http://" << options.host << ':' << *port << '\n';
 
     while (stop_requested == 0) {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
