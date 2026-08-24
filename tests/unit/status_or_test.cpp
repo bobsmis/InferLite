@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <stdexcept>
+#include <tuple>
 #include <utility>
 
 #include "inferlite/core/status_or.h"
@@ -25,7 +26,7 @@ TEST(StatusOrTest, ErrorResultPreservesStatus) {
 }
 
 TEST(StatusOrTest, OkStatusCannotCreateErrorResult) {
-    EXPECT_THROW((StatusOr<int>(Status::Ok())), std::logic_error);
+    EXPECT_THROW((std::ignore=StatusOr<int>(Status::Ok())), std::logic_error);
 }
 
 TEST(StatusOrTest, ValueOnErrorThrowsLogicError) {

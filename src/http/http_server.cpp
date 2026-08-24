@@ -10,13 +10,19 @@ namespace inferlite {
 
 class HttpServer::Impl final { // 参数校验、错误转换、状态管理、注册推理业务回调
   public:
-    explicit Impl(HttpServerOptions options)
-        : options_(std::move(
-              options)) // 构造函数，传入HttpServerOptions对象，初始化options_成员变量，完成注册路由
-    {
+explicit Impl(HttpServerOptions options)
+    : options_(std::move(options)) {
+    server_.set_socket_options([](socket_t socket) {
+        httplib::set_socket_opt(
+            socket,
+            SOL_SOCKET,
+            SO_REUSEADDR,
+            1);
+    });
 
-        RegisterRoutes(); // 注册路由
-    }
+    RegisterRoutes();
+}
+
 
     Status Start() {
         if (server_.is_running()) {
@@ -91,7 +97,8 @@ class HttpServer::Impl final { // 参数校验、错误转换、状态管理、�
 
 StatusOr<std::unique_ptr<HttpServer>> HttpServer::Create(const HttpServerOptions& options) {
     if (options.host.empty()) {
-        return StatusOr<std::unique_ptr<HttpServer>>(Status::Internal("host is empty"));
+return StatusOr<std::unique_ptr<HttpServer>>(
+    Status::InvalidArgument("host is empty"));
     }
 
     auto impl = std::make_unique<Impl>(options);
