@@ -4,10 +4,10 @@ InferLite 是一个使用 C++17 构建的轻量级单机 CPU 模型推理服务�
 
 ## 当前状态
 
-- `v0.0.1` FakeBackend 命令行闭环：已完成；
+- `v0.0.1` FakeBackend 命令行：已完成；
 - `HTTP-01` Server 生命周期与健康检查：已完成；
-- 当前单元：`HTTP-02` JSON 与 Request/Result 转换，待开始；
-- 增强版 `v1.0` 功能单元进度：6/37，约 16%。
+- 当前单元：`HTTP-02` JSON 与 Request/Result 转换，；
+-  `v1.0` 功能单元进度：6/37，约 16%。
 
 当前已形成两条可运行链路：
 
