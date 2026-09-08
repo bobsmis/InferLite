@@ -7,20 +7,21 @@ add_executable(
     unit/version_test.cpp
     unit/fake_backend_test.cpp
     integration/http_server_test.cpp
+    unit/json_adapter_test.cpp
 )
 
 target_link_libraries(
     inferlite_tests
     PRIVATE
-  GTest::gtest_main
+        GTest::gtest_main
         inferlite_core
         inferlite_http
         httplib::httplib
         inferlite_project_options
         inferlite_sanitizers
+        nlohmann_json::nlohmann_json
 )
 include(GoogleTest)
-
 
 gtest_discover_tests(inferlite_tests)
 

@@ -25,6 +25,7 @@ add_library(
     inferlite_http
     STATIC
     http/http_server.cpp
+    http/json_adapter.cpp
 )
 
 target_include_directories(
@@ -41,4 +42,5 @@ target_link_libraries(
         httplib::httplib
         inferlite_project_options
         inferlite_sanitizers
+        nlohmann_json::nlohmann_json
 )

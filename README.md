@@ -4,10 +4,11 @@ InferLite 是一个使用 C++17 构建的轻量级单机 CPU 模型推理服务�
 
 ## 当前状态
 
-- `v0.0.1` FakeBackend 命令行：已完成；
+- `v0.0.1` FakeBackend 命令行闭环：已完成；
 - `HTTP-01` Server 生命周期与健康检查：已完成；
-- 当前单元：`HTTP-02` JSON 与 Request/Result 转换，；
--  `v1.0` 功能单元进度：6/37，约 16%。
+- `HTTP-02` JSON 与 Request/Result 转换：已完成；
+- 当前单元：`HTTP-03` `/v1/infer` 调用 FakeBackend；
+- 增强版 `v1.0` 功能单元进度：7/37，约 19%。
 
 当前已形成两条可运行链路：
 
@@ -17,6 +18,9 @@ CLI
 
 HTTP Client
  └── HttpServer → GET /v1/health → HTTP 200 + "ok"
+
+JSON Adapter
+ └── JSON → InferenceRequest → InferenceResult → JSON
 ```
 
 ## 已实现功能
@@ -46,15 +50,20 @@ HTTP Client
 - 端口冲突检测、重复停止和析构释放端口；
 - SIGINT/SIGTERM停止Server进程；
 - `SO_REUSEADDR`与Linux端口复用语义验证。
+- 使用nlohmann/json实现JSON适配层，第三方类型不进入公开接口；
+- 将`model`、有序`inputs`、Tensor Shape和float32数据解析为领域对象；
+- 将有序`outputs`序列化为JSON；
+- 覆盖语法错误、字段缺失、类型错误、Shape边界、长度不匹配、重名和非有限数值。
 
 ## 自动化证据
 
-当前共注册58项测试：
+当前共注册80项测试：
 
-- Debug：58/58；
-- Release：58/58；
-- ASan/UBSan：58/58；
+- Debug：80/80；
+- Release：80/80；
+- ASan/UBSan：80/80；
 - HTTP集成测试：9/9；
+- JSON适配器测试：22/22；
 - `clang-format --dry-run --Werror`通过；
 - `git diff --check`通过。
 
@@ -69,7 +78,7 @@ HTTP Client
 - **语言与设计**：C++17、RAII、智能指针、移动语义、值语义、模板、STL、运行时多态、PImpl；
 - **构建**：现代CMake、CMake Presets、Ninja、FetchContent、多Target依赖管理；
 - **测试与质量**：GoogleTest、CTest、ASan、UBSan、clang-format、编译警告；
-- **服务与Linux**：cpp-httplib、HTTP、TCP端口生命周期、`std::thread`、SIGINT/SIGTERM、`curl`、`ss`；
+- **服务与Linux**：cpp-httplib、nlohmann/json、HTTP、TCP端口生命周期、`std::thread`、SIGINT/SIGTERM、`curl`、`ss`；
 - **协作**：Git、GitHub、功能单元式开发与可验证提交。
 
 ## Target与依赖关系
@@ -83,7 +92,8 @@ inferlite_server
 
 inferlite_http
 ├── PUBLIC  inferlite_core
-└── PRIVATE httplib::httplib
+├── PRIVATE httplib::httplib
+└── PRIVATE nlohmann_json::nlohmann_json
 
 inferlite_tests
 ├── inferlite_core
@@ -113,6 +123,7 @@ inferlite_tests
 
 - GoogleTest v1.17.0
 - cpp-httplib v0.51.0
+- nlohmann/json v3.11.3
 
 ## 构建与测试
 
@@ -145,6 +156,45 @@ ctest --preset sanitize --output-on-failure
 ```bash
 ./build/debug/tests/inferlite_tests --gtest_filter='HttpServerTest.*'
 ```
+
+只运行JSON适配器测试：
+
+```bash
+./build/debug/tests/inferlite_tests --gtest_filter='JsonAdapterTest.*'
+```
+
+## JSON适配器契约
+
+请求JSON：
+
+```json
+{
+  "model": "demo_model",
+  "inputs": [
+    {
+      "name": "x",
+      "shape": [2],
+      "data": [1.0, 2.0]
+    }
+  ]
+}
+```
+
+结果JSON：
+
+```json
+{
+  "outputs": [
+    {
+      "name": "x",
+      "shape": [2],
+      "data": [1.0, 2.0]
+    }
+  ]
+}
+```
+
+适配层只负责JSON与Core领域对象之间的转换。`POST /v1/infer`路由和Backend调用属于`HTTP-03`。
 
 ## 运行CLI Demo
 
@@ -272,6 +322,7 @@ v1.0    CI、文档、全量门禁与Release收口
 - CLI使用固定演示输入；
 - FakeBackend只验证调用链和错误传播，不执行真实模型计算；
 - HTTP当前只提供`GET /v1/health`；
-- JSON、`POST /v1/infer`和ONNX Runtime尚未接入；
+- JSON适配器尚未接入`POST /v1/infer`，HTTP服务当前仍只提供健康检查；
+- ONNX Runtime尚未接入；
 - 异步队列、动态Batch和性能数据仍在后续功能单元；
 - 项目目前是学习与实验性实现，所有能力以已提交代码和测试证据为准。
